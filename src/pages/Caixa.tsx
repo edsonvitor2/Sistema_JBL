@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Modal } from '../components/Modal'
 import { useApp } from '../context/AppContext'
+import { totalItens } from '../lib/estoque'
 import { agoraISO, brl, dataBR } from '../lib/format'
 import { supabase } from '../lib/supabase'
 import { totaisPorPagamento } from '../lib/vendas'
@@ -8,8 +10,23 @@ import type { Caixa, Sangria, TotaisPagamento, Venda } from '../lib/types'
 
 const zerado: TotaisPagamento = { dinheiro: 0, pix: 0, debito: 0, credito: 0 }
 
+async function buscarMesasAbertas() {
+  const { data, error } = await supabase
+    .from('historico_vendas')
+    .select('*')
+    .eq('origem', 'comanda')
+    .eq('status', 'aberta')
+    .order('cliente_nome')
+  if (error) throw error
+  return (data || []) as Venda[]
+}
+
+const temItens = (venda: Venda) => (venda.itens || []).some((item) => Number(item.quantidade) > 0)
+
 export function CaixaPage() {
-  const { caixa, recarregarCaixa } = useApp()
+  const { caixa, recarregarCaixa, carrinhoBalcao } = useApp()
+  const navigate = useNavigate()
+  const [mesasAbertas, setMesasAbertas] = useState<Venda[]>([])
   const [vendas, setVendas] = useState<Venda[]>([])
   const [sangrias, setSangrias] = useState<Sangria[]>([])
   const [historico, setHistorico] = useState<Caixa[]>([])
@@ -32,8 +49,10 @@ export function CaixaPage() {
     if (!caixa) {
       setVendas([])
       setSangrias([])
+      setMesasAbertas([])
       return
     }
+    setMesasAbertas((await buscarMesasAbertas().catch(() => [])).filter(temItens))
     const [{ data: vendasData }, { data: sangriasData }] = await Promise.all([
       supabase.from('historico_vendas').select('*').eq('caixa_id', caixa.id),
       supabase.from('sangrias_caixa').select('*').eq('caixa_id', caixa.id).order('criado_em', { ascending: false }),
@@ -88,9 +107,39 @@ export function CaixaPage() {
     await carregarExtras()
   }
 
+  const pendenteBalcao = carrinhoBalcao.length > 0
+  const bloqueado = pendenteBalcao || mesasAbertas.length > 0
+
   async function fecharCaixa() {
     if (!caixa) return
+    setErro(null)
+    if (pendenteBalcao) {
+      setErro('Há um pedido no Balcão sem finalizar. Finalize ou remova os itens antes de fechar o caixa.')
+      return
+    }
+    // Confere de novo no banco: outra pessoa pode ter aberto uma mesa em outro aparelho.
+    let abertas: Venda[]
+    try {
+      abertas = await buscarMesasAbertas()
+    } catch (e) {
+      setErro(`Não foi possível verificar as mesas: ${e instanceof Error ? e.message : 'erro de conexão'}`)
+      return
+    }
+    const comItens = abertas.filter(temItens)
+    setMesasAbertas(comItens)
+    if (comItens.length > 0) {
+      setErro('Há mesas abertas. Feche ou cancele todas as mesas antes de fechar o caixa.')
+      return
+    }
     if (!confirm('Fechar o caixa agora?')) return
+    // Mesas abertas sem nenhum item (só foram tocadas) são canceladas junto com o fechamento.
+    const vazias = abertas.filter((venda) => !temItens(venda)).map((venda) => venda.id)
+    if (vazias.length) {
+      await supabase
+        .from('historico_vendas')
+        .update({ status: 'cancelado', total: 0, atualizado_em: agoraISO() })
+        .in('id', vazias)
+    }
     const diferenca = {
       dinheiro: Number(informado.dinheiro || 0) - calculado.dinheiro,
       pix: Number(informado.pix || 0) - calculado.pix,
@@ -199,7 +248,39 @@ export function CaixaPage() {
                 className="mt-1 w-full rounded-xl border border-line bg-panel-2 px-3 py-2 text-ink"
               />
             </label>
-            <button onClick={() => void fecharCaixa()} className="mt-4 rounded-xl bg-danger px-5 py-3 font-semibold text-white">
+            {bloqueado && (
+              <div className="mt-4 rounded-xl border border-warn/50 bg-warn/10 p-4 text-sm">
+                <p className="font-semibold text-warn">Não é possível fechar o caixa ainda:</p>
+                <ul className="mt-2 space-y-1.5">
+                  {pendenteBalcao && (
+                    <li className="flex flex-wrap items-center justify-between gap-2">
+                      <span>
+                        Pedido no Balcão sem finalizar · {carrinhoBalcao.reduce((a, i) => a + Number(i.quantidade), 0)} item(ns) ·{' '}
+                        {brl(totalItens(carrinhoBalcao))}
+                      </span>
+                      <button onClick={() => navigate('/balcao')} className="text-gold underline">
+                        Ir para o Balcão
+                      </button>
+                    </li>
+                  )}
+                  {mesasAbertas.map((mesa) => (
+                    <li key={mesa.id} className="flex flex-wrap items-center justify-between gap-2">
+                      <span>
+                        {mesa.cliente_nome || 'Mesa'} aberta · {brl(mesa.total)}
+                      </span>
+                      <button onClick={() => navigate('/mesas')} className="text-gold underline">
+                        Ir para Mesas
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            <button
+              onClick={() => void fecharCaixa()}
+              disabled={bloqueado}
+              className="mt-4 rounded-xl bg-danger px-5 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
+            >
               Fechar caixa
             </button>
           </section>

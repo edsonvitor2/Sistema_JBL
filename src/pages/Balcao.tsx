@@ -1,14 +1,12 @@
-import { useState } from 'react'
 import { AvisoCaixa } from '../components/AvisoCaixa'
 import { Checkout } from '../components/Checkout'
 import { PdvShell } from '../components/PdvShell'
 import { ProductPicker } from '../components/ProductPicker'
 import { useApp } from '../context/AppContext'
-import type { ItemVenda, Produto } from '../lib/types'
+import type { Produto } from '../lib/types'
 
 export function Balcao() {
-  const { produtos, caixa, clientes, recarregarProdutos } = useApp()
-  const [itens, setItens] = useState<ItemVenda[]>([])
+  const { produtos, caixa, clientes, recarregarProdutos, carrinhoBalcao: itens, setCarrinhoBalcao: setItens } = useApp()
 
   function adicionar(produto: Produto): boolean {
     const noCarrinho = itens.find((item) => item.produtoId === produto.id)?.quantidade || 0

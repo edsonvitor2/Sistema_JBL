@@ -1,8 +1,22 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { supabase } from '../lib/supabase'
-import type { Caixa, Cliente, Produto } from '../lib/types'
+import type { Caixa, Cliente, ItemVenda, Produto } from '../lib/types'
+
+const CHAVE_CARRINHO = 'jbl_carrinho_balcao'
+
+function lerCarrinho(): ItemVenda[] {
+  try {
+    const salvo = JSON.parse(localStorage.getItem(CHAVE_CARRINHO) || '[]')
+    return Array.isArray(salvo) ? salvo : []
+  } catch {
+    return []
+  }
+}
 
 type AppContextValue = {
+  /** Carrinho do Balcão, salvo no aparelho para não se perder ao trocar de página. */
+  carrinhoBalcao: ItemVenda[]
+  setCarrinhoBalcao: (atualizar: ItemVenda[] | ((atual: ItemVenda[]) => ItemVenda[])) => void
   carregando: boolean
   erro: string | null
   produtos: Produto[]
@@ -21,6 +35,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [produtos, setProdutos] = useState<Produto[]>([])
   const [caixa, setCaixa] = useState<Caixa | null>(null)
   const [clientes, setClientes] = useState<Cliente[]>([])
+  const [carrinhoBalcao, setCarrinhoBalcao] = useState<ItemVenda[]>(lerCarrinho)
+
+  useEffect(() => {
+    try {
+      if (carrinhoBalcao.length) localStorage.setItem(CHAVE_CARRINHO, JSON.stringify(carrinhoBalcao))
+      else localStorage.removeItem(CHAVE_CARRINHO)
+    } catch {
+      /* armazenamento indisponível: o carrinho só não persiste */
+    }
+  }, [carrinhoBalcao])
 
   const recarregarProdutos = useCallback(async () => {
     const { data, error } = await supabase.from('produtos').select('*').order('nome')
@@ -70,6 +94,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo(
     () => ({
+      carrinhoBalcao,
+      setCarrinhoBalcao,
       carregando,
       erro,
       produtos,
@@ -79,7 +105,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       recarregarProdutos,
       recarregarCaixa,
     }),
-    [carregando, erro, produtos, caixa, clientes, recarregar, recarregarProdutos, recarregarCaixa],
+    [carrinhoBalcao, carregando, erro, produtos, caixa, clientes, recarregar, recarregarProdutos, recarregarCaixa],
   )
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>
