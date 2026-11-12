@@ -1,0 +1,64 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Fraunces", Georgia, serif;
+  --color-bg: #12100e;
+  --color-panel: #1b1713;
+  --color-panel-2: #241f19;
+  --color-line: #3a3228;
+  --color-ink: #f6efe4;
+  --color-muted: #b7aa98;
+  --color-gold: #e8b86d;
+  --color-gold-2: #c9923a;
+  --color-ok: #63c084;
+  --color-warn: #e0b25a;
+  --color-danger: #e06b5a;
+  --color-info: #7eb4d6;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(1200px 500px at 10% -10%, rgba(232, 184, 109, 0.12), transparent 45%),
+    radial-gradient(900px 400px at 100% 0%, rgba(126, 180, 214, 0.08), transparent 40%),
+    #12100e;
+  color: #f6efe4;
+  font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.titulo {
+  font-family: "Fraunces", Georgia, serif;
+}
+
+.scroll-fino::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.scroll-fino::-webkit-scrollbar-thumb {
+  background: #3a3228;
+  border-radius: 99px;
+}

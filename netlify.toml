@@ -1,0 +1,12 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# SPA: qualquer rota (/mesas, /balcao...) abre o index.html e o React Router resolve.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
