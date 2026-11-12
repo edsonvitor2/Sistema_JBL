@@ -9,6 +9,7 @@ import { Dashboard } from './pages/Dashboard'
 import { Estoque } from './pages/Estoque'
 import { Mesas } from './pages/Mesas'
 import { Prazo } from './pages/Prazo'
+import { RelatorioCaixa } from './pages/RelatorioCaixa'
 import { Relatorios } from './pages/Relatorios'
 
 function ConfigFaltando() {
@@ -66,6 +67,7 @@ function AppRoutes() {
         <Route path="/mesas" element={<Mesas />} />
         <Route path="/estoque" element={<Estoque />} />
         <Route path="/caixa" element={<CaixaPage />} />
+        <Route path="/caixa/:id" element={<RelatorioCaixa />} />
         <Route path="/relatorios" element={<Relatorios />} />
         <Route path="/clientes" element={<Clientes />} />
         <Route path="/prazo" element={<Prazo />} />

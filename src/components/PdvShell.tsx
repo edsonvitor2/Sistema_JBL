@@ -23,7 +23,7 @@ export function PdvShell({ titulo, subtitulo, topo, itens, checkout, children }:
   }
 
   return (
-    <div className="flex h-[calc(100svh-8.25rem)] flex-col gap-2 lg:h-[calc(100svh-3rem)] lg:gap-4">
+    <div className="flex h-[calc(100svh-12rem)] flex-col gap-2 lg:h-[calc(100svh-6.5rem)] lg:gap-4">
       <div className="flex shrink-0 items-end justify-between gap-2">
         <div className="min-w-0">
           {subtitulo && <p className="text-[11px] tracking-wide text-gold uppercase lg:text-sm">{subtitulo}</p>}
@@ -59,7 +59,7 @@ export function PdvShell({ titulo, subtitulo, topo, itens, checkout, children }:
                 <X size={20} />
               </button>
             </div>
-            <div className="min-h-0 flex-1 overflow-hidden px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+            <div className="min-h-0 flex-1 overflow-hidden px-3 pb-[calc(4rem+env(safe-area-inset-bottom))]">
               {checkout(fechar)}
             </div>
           </div>

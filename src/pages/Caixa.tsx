@@ -1,3 +1,4 @@
+import { FileText } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Modal } from '../components/Modal'
@@ -170,9 +171,20 @@ export function CaixaPage() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <p className="text-sm text-gold">Movimento</p>
-        <h1 className="titulo text-3xl">Caixa</h1>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-sm text-gold">Movimento</p>
+          <h1 className="titulo text-3xl">Caixa</h1>
+        </div>
+        {caixa && (
+          <button
+            onClick={() => navigate(`/caixa/${caixa.id}`)}
+            className="flex items-center gap-2 rounded-xl bg-gold px-4 py-2.5 font-semibold text-bg"
+          >
+            <FileText size={18} />
+            Relatório do caixa
+          </button>
+        )}
       </div>
       {erro && <p className="text-sm text-danger">{erro}</p>}
 
@@ -305,13 +317,23 @@ export function CaixaPage() {
         <h2 className="titulo text-xl">Últimos caixas</h2>
         <div className="mt-3 space-y-2">
           {historico.map((item) => (
-            <div key={item.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-panel-2 px-3 py-2">
+            <button
+              key={item.id}
+              onClick={() => navigate(`/caixa/${item.id}`)}
+              className="flex w-full flex-wrap items-center justify-between gap-2 rounded-xl bg-panel-2 px-3 py-2 text-left transition hover:bg-line"
+            >
               <div>
                 <p className="text-sm font-medium capitalize">{item.status}</p>
                 <p className="text-xs text-muted">{dataBR(item.aberto_em)}</p>
               </div>
-              <p className="text-sm text-muted">Inicial {brl(item.valor_inicial)}</p>
-            </div>
+              <div className="flex items-center gap-3">
+                <p className="text-sm text-muted">Inicial {brl(item.valor_inicial)}</p>
+                <span className="flex items-center gap-1 text-sm text-gold">
+                  <FileText size={15} />
+                  Relatório
+                </span>
+              </div>
+            </button>
           ))}
         </div>
       </section>

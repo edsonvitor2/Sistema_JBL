@@ -120,14 +120,15 @@ export function Layout() {
           </div>
         </header>
         <AvisoServidorFora status={servidor.status} onVerificar={verificarServidor} />
-        <main className={pdv ? 'flex-1 overflow-hidden p-2 pb-[4.75rem] lg:p-6 lg:pb-6' : 'flex-1 p-4 pb-[4.75rem] lg:p-6 lg:pb-6'}>
+        {/* pb extra: reserva o canto inferior para o selo "Powered by Netlify" não cobrir o sistema */}
+        <main className={pdv ? 'flex-1 overflow-hidden p-2 pb-[8.5rem] lg:p-6 lg:pb-20' : 'flex-1 p-4 pb-[8.5rem] lg:p-6 lg:pb-20'}>
           <Outlet />
         </main>
 
         {maisAberto && (
           <div className="fixed inset-0 z-40 lg:hidden">
             <button className="absolute inset-0 bg-black/55" onClick={() => setMaisAberto(false)} aria-label="Fechar menu" />
-            <div className="absolute inset-x-3 bottom-[4.6rem] rounded-2xl border border-line bg-panel p-3">
+            <div className="absolute inset-x-3 bottom-[8.4rem] rounded-2xl border border-line bg-panel p-3">
               <div className="mb-2 flex items-center justify-between">
                 <p className="text-sm font-semibold">Mais opções</p>
                 <button onClick={() => setMaisAberto(false)} className="rounded-lg p-1 text-muted" aria-label="Fechar">
@@ -159,7 +160,7 @@ export function Layout() {
           </div>
         )}
 
-        <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 gap-1 border-t border-line bg-panel/95 px-1 pt-1 pb-[max(0.4rem,env(safe-area-inset-bottom))] backdrop-blur lg:hidden">
+        <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 gap-1 border-t border-line bg-panel/95 px-1 pt-1 pb-[calc(3.75rem+env(safe-area-inset-bottom))] backdrop-blur lg:hidden">
           {atalhosMobile.map((link) => {
             const Icon = link.icon
             return (

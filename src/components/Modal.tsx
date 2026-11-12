@@ -12,7 +12,7 @@ export function Modal({ aberto, titulo, onFechar, children, largura = 'max-w-lg'
   if (!aberto) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-3 sm:items-center">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-3 pb-20 sm:items-center">
       <button className="absolute inset-0 cursor-default" onClick={onFechar} aria-label="Fechar" />
       <div className={`relative w-full ${largura} rounded-2xl border border-line bg-panel p-5 shadow-2xl`}>
         <div className="mb-4 flex items-start justify-between gap-3">
