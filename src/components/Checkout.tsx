@@ -1,9 +1,8 @@
 import { useMemo, useState } from 'react'
 import { brl } from '../lib/format'
 import { totalItens } from '../lib/estoque'
-import { imprimirRecibo } from '../lib/recibo'
 import { finalizarVendaExistente, registrarVenda } from '../lib/vendas'
-import type { Cliente, ItemVenda, OrigemVenda, TipoPagamento, Venda } from '../lib/types'
+import type { Cliente, ItemVenda, OrigemVenda, TipoPagamento } from '../lib/types'
 
 type Props = {
   itens: ItemVenda[]
@@ -79,14 +78,18 @@ export function Checkout({
         cliente_telefone: clienteSelecionado?.telefone || null,
         cliente_endereco: clienteSelecionado?.endereco || null,
       }
-      const venda = vendaId
-        ? await finalizarVendaExistente(vendaId, payload)
-        : await registrarVenda({
-            ...payload,
-            caixa_id: caixaId,
-            baixar: baixarEstoque,
-          })
-      imprimirRecibo(venda as Venda)
+      if (vendaId) {
+        await finalizarVendaExistente(vendaId, payload)
+      } else {
+        await registrarVenda({
+          ...payload,
+          caixa_id: caixaId,
+          baixar: baixarEstoque,
+        })
+      }
+      // Recibo desativado por enquanto. Para voltar a imprimir, use imprimirRecibo() de '../lib/recibo'.
+      setValorCliente('')
+      setPagamento('dinheiro')
       onSucesso()
     } catch (e) {
       setErro(e instanceof Error ? e.message : 'Não foi possível finalizar a venda')
