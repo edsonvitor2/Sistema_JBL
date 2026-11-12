@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { Layout } from './components/Layout'
 import { AppProvider, useApp } from './context/AppContext'
+import { configFaltando } from './lib/supabase'
 import { Balcao } from './pages/Balcao'
 import { CaixaPage } from './pages/Caixa'
 import { Clientes } from './pages/Clientes'
@@ -9,6 +10,24 @@ import { Estoque } from './pages/Estoque'
 import { Mesas } from './pages/Mesas'
 import { Prazo } from './pages/Prazo'
 import { Relatorios } from './pages/Relatorios'
+
+function ConfigFaltando() {
+  return (
+    <div className="grid min-h-svh place-items-center p-6">
+      <div className="max-w-md rounded-2xl border border-danger/40 bg-panel p-6 text-center">
+        <h1 className="titulo text-2xl">Configuração do banco faltando</h1>
+        <p className="mt-2 text-sm text-muted">
+          O sistema foi publicado sem as variáveis <strong>VITE_SUPABASE_URL</strong> e{' '}
+          <strong>VITE_SUPABASE_ANON_KEY</strong>.
+        </p>
+        <p className="mt-3 text-sm text-muted">
+          No Netlify: Site configuration → Environment variables → adicione as duas. Depois vá em Deploys → Trigger deploy
+          → Clear cache and deploy site.
+        </p>
+      </div>
+    </div>
+  )
+}
 
 function AppRoutes() {
   const { carregando, erro, recarregar } = useApp()
@@ -57,6 +76,7 @@ function AppRoutes() {
 }
 
 export default function App() {
+  if (configFaltando) return <ConfigFaltando />
   return (
     <BrowserRouter>
       <AppProvider>
