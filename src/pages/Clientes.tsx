@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { Modal } from '../components/Modal'
 import { useApp } from '../context/AppContext'
+import { cpfValido, formatarCpf, soDigitosCpf } from '../lib/cpf'
 import { agoraISO } from '../lib/format'
 import { supabase } from '../lib/supabase'
 import type { Cliente } from '../lib/types'
 
-const vazio = { nome: '', telefone: '', email: '', endereco: '' }
+const vazio = { nome: '', telefone: '', cpf: '', endereco: '' }
 
 export function Clientes() {
   const { clientes, recarregar } = useApp()
@@ -21,7 +22,7 @@ export function Clientes() {
         ? {
             nome: cliente.nome,
             telefone: cliente.telefone || '',
-            email: cliente.email || '',
+            cpf: formatarCpf(cliente.cpf),
             endereco: cliente.endereco || '',
           }
         : vazio,
@@ -34,10 +35,21 @@ export function Clientes() {
       setErro('Informe o nome')
       return
     }
+    const cpf = soDigitosCpf(form.cpf)
+    if (cpf && !cpfValido(cpf)) {
+      setErro('CPF inválido. Confira os números.')
+      return
+    }
+    const repetido = cpf && clientes.find((c) => c.cpf === cpf && c.id !== editando?.id)
+    if (repetido) {
+      setErro(`Este CPF já está cadastrado para ${repetido.nome}.`)
+      return
+    }
+    setErro(null)
     const payload = {
       nome: form.nome.trim(),
       telefone: form.telefone,
-      email: form.email,
+      cpf: cpf || null,
       endereco: form.endereco,
       atualizado_em: agoraISO(),
     }
@@ -46,7 +58,13 @@ export function Clientes() {
       : supabase.from('clientes').insert({ ...payload, criado_em: agoraISO() })
     const { error } = await query
     if (error) {
-      setErro(error.message)
+      setErro(
+        /cpf/i.test(error.message) && /column|schema cache/i.test(error.message)
+          ? 'O banco ainda não tem o campo CPF. Rode o script supabase/03-cpf-clientes.sql no Supabase.'
+          : /duplicate|unique/i.test(error.message)
+            ? 'Este CPF já está cadastrado para outro cliente.'
+            : error.message,
+      )
       return
     }
     setAberto(false)
@@ -73,6 +91,7 @@ export function Clientes() {
           >
             <p className="font-semibold">{cliente.nome}</p>
             <p className="text-sm text-muted">{cliente.telefone || 'Sem telefone'}</p>
+            {cliente.cpf && <p className="text-sm text-muted">CPF {formatarCpf(cliente.cpf)}</p>}
             <p className="text-sm text-muted">{cliente.endereco || 'Sem endereço'}</p>
           </button>
         ))}
@@ -83,7 +102,13 @@ export function Clientes() {
         <div className="space-y-3">
           <Campo label="Nome" value={form.nome} onChange={(v) => setForm({ ...form, nome: v })} />
           <Campo label="Telefone" value={form.telefone} onChange={(v) => setForm({ ...form, telefone: v })} />
-          <Campo label="E-mail" value={form.email} onChange={(v) => setForm({ ...form, email: v })} />
+          <Campo
+            label="CPF"
+            value={form.cpf}
+            onChange={(v) => setForm({ ...form, cpf: formatarCpf(v) })}
+            placeholder="000.000.000-00"
+            numerico
+          />
           <Campo label="Endereço" value={form.endereco} onChange={(v) => setForm({ ...form, endereco: v })} />
         </div>
         {erro && <p className="mt-3 text-sm text-danger">{erro}</p>}
@@ -95,11 +120,29 @@ export function Clientes() {
   )
 }
 
-function Campo({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+function Campo({
+  label,
+  value,
+  onChange,
+  placeholder,
+  numerico,
+}: {
+  label: string
+  value: string
+  onChange: (v: string) => void
+  placeholder?: string
+  numerico?: boolean
+}) {
   return (
     <label className="block text-sm text-muted">
       {label}
-      <input value={value} onChange={(e) => onChange(e.target.value)} className="mt-1 w-full rounded-xl border border-line bg-panel-2 px-3 py-2 text-ink" />
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        inputMode={numerico ? 'numeric' : undefined}
+        className="mt-1 w-full rounded-xl border border-line bg-panel-2 px-3 py-2 text-ink"
+      />
     </label>
   )
 }

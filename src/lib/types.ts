@@ -70,6 +70,8 @@ export type Cliente = {
   nome: string
   telefone: string | null
   email: string | null
+  /** Só os 11 dígitos, sem pontos e traço. */
+  cpf: string | null
   endereco: string | null
   criado_em: string
   atualizado_em: string
