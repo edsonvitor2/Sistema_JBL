@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { supabase } from '../lib/supabase'
-import type { Caixa, Cliente, ItemVenda, Produto } from '../lib/types'
+import type { Caixa, Cliente, ItemVenda, Produto, Venda } from '../lib/types'
 
 const CHAVE_CARRINHO = 'jbl_carrinho_balcao'
 
@@ -13,7 +13,11 @@ function lerCarrinho(): ItemVenda[] {
   }
 }
 
+const DIAS_RANKING = 90
+
 type AppContextValue = {
+  /** Unidades vendidas por produto (id → qtd) nos últimos 90 dias, para ordenar por mais vendidos. */
+  vendidos: Record<string, number>
   /** Carrinho do Balcão, salvo no aparelho para não se perder ao trocar de página. */
   carrinhoBalcao: ItemVenda[]
   setCarrinhoBalcao: (atualizar: ItemVenda[] | ((atual: ItemVenda[]) => ItemVenda[])) => void
@@ -36,6 +40,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [caixa, setCaixa] = useState<Caixa | null>(null)
   const [clientes, setClientes] = useState<Cliente[]>([])
   const [carrinhoBalcao, setCarrinhoBalcao] = useState<ItemVenda[]>(lerCarrinho)
+  const [vendidos, setVendidos] = useState<Record<string, number>>({})
 
   useEffect(() => {
     try {
@@ -63,9 +68,29 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setCaixa(((data || [])[0] as Caixa) || null)
   }, [])
 
+  // Ranking de mais vendidos (unidades nos últimos DIAS_RANKING dias).
+  // Calculado só ao abrir/recarregar o sistema, para os botões não mudarem de lugar durante o atendimento.
+  const carregarRanking = useCallback(async () => {
+    const desde = new Date(Date.now() - DIAS_RANKING * 86_400_000).toISOString()
+    const { data, error } = await supabase.from('historico_vendas').select('itens,status').gte('criado_em', desde)
+    if (error) {
+      console.error('Falha ao carregar mais vendidos', error)
+      return
+    }
+    const contagem: Record<string, number> = {}
+    for (const venda of (data || []) as Pick<Venda, 'itens' | 'status'>[]) {
+      if (venda.status === 'aberta' || venda.status === 'cancelado') continue
+      for (const item of venda.itens || []) {
+        contagem[item.produtoId] = (contagem[item.produtoId] || 0) + Number(item.quantidade || 0)
+      }
+    }
+    setVendidos(contagem)
+  }, [])
+
   const recarregar = useCallback(async () => {
     setErro(null)
     setCarregando(true)
+    void carregarRanking()
     try {
       const [produtosRes, caixaRes, clientesRes] = await Promise.all([
         supabase.from('produtos').select('*').order('nome'),
@@ -86,7 +111,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } finally {
       setCarregando(false)
     }
-  }, [])
+  }, [carregarRanking])
 
   useEffect(() => {
     void recarregar()
@@ -94,6 +119,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo(
     () => ({
+      vendidos,
       carrinhoBalcao,
       setCarrinhoBalcao,
       carregando,
@@ -105,7 +131,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       recarregarProdutos,
       recarregarCaixa,
     }),
-    [carrinhoBalcao, carregando, erro, produtos, caixa, clientes, recarregar, recarregarProdutos, recarregarCaixa],
+    [vendidos, carrinhoBalcao, carregando, erro, produtos, caixa, clientes, recarregar, recarregarProdutos, recarregarCaixa],
   )
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>

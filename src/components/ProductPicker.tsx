@@ -1,5 +1,6 @@
 import { ScanBarcode, Search } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
+import { useApp } from '../context/AppContext'
 import { buscarPorCodigo } from '../lib/codigo'
 import { brl } from '../lib/format'
 import { estoqueBaixo } from '../lib/estoque'
@@ -17,17 +18,33 @@ export function ProductPicker({ produtos, onEscolher }: Props) {
   const [camera, setCamera] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
+  const { vendidos } = useApp()
+
+  // Mais vendidos primeiro; sem estoque vão para o fim; empate em ordem alfabética.
+  const ordenados = useMemo(
+    () =>
+      [...produtos].sort((a, b) => {
+        const semA = Number(a.quantidade) <= 0 ? 1 : 0
+        const semB = Number(b.quantidade) <= 0 ? 1 : 0
+        if (semA !== semB) return semA - semB
+        const dif = (vendidos[b.id] || 0) - (vendidos[a.id] || 0)
+        if (dif !== 0) return dif
+        return a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' })
+      }),
+    [produtos, vendidos],
+  )
+
   const filtrados = useMemo(() => {
     const termo = busca.trim().toLowerCase()
-    if (!termo) return produtos.slice(0, 48)
-    return produtos
+    if (!termo) return ordenados.slice(0, 48)
+    return ordenados
       .filter((produto) => {
         const nome = produto.nome.toLowerCase()
         const codigo = (produto.codigo_barras || '').toLowerCase()
         return nome.includes(termo) || codigo.includes(termo)
       })
       .slice(0, 48)
-  }, [busca, produtos])
+  }, [busca, ordenados])
 
   function confirmarBusca() {
     const termo = busca.trim().toLowerCase()
