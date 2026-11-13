@@ -16,12 +16,12 @@ type Props = {
   clientes?: Cliente[]
 }
 
-const pagamentos: { id: TipoPagamento; label: string }[] = [
-  { id: 'dinheiro', label: 'Dinheiro' },
-  { id: 'pix', label: 'Pix' },
-  { id: 'debito', label: 'Débito' },
-  { id: 'credito', label: 'Crédito' },
-  { id: 'prazo', label: 'A prazo' },
+const pagamentos: { id: TipoPagamento; label: string; curto: string }[] = [
+  { id: 'dinheiro', label: 'Dinheiro', curto: 'Din' },
+  { id: 'pix', label: 'Pix', curto: 'Pix' },
+  { id: 'debito', label: 'Débito', curto: 'Déb' },
+  { id: 'credito', label: 'Crédito', curto: 'Créd' },
+  { id: 'prazo', label: 'A prazo', curto: 'Prazo' },
 ]
 
 export function Checkout({
@@ -100,31 +100,39 @@ export function Checkout({
 
   return (
     <div className="flex h-full min-h-0 flex-col rounded-2xl border border-line bg-panel">
-      <div className="border-b border-line px-4 py-3">
+      <div className="flex items-baseline justify-between border-b border-line px-4 py-2">
         <p className="text-sm text-muted">Carrinho</p>
-        <p className="titulo text-2xl">{brl(total)}</p>
+        <p className="titulo text-xl">{brl(total)}</p>
       </div>
-      <div className="scroll-fino min-h-0 flex-1 space-y-2 overflow-auto p-3">
+      <div className="scroll-fino min-h-0 flex-1 space-y-1.5 overflow-auto p-2">
         {itens.length === 0 && <p className="py-8 text-center text-sm text-muted">Nenhum item</p>}
         {itens.map((item) => (
-          <div key={item.produtoId} className="rounded-xl bg-panel-2 p-3">
-            <div className="flex items-start justify-between gap-2">
-              <p className="text-sm font-medium">{item.nome}</p>
-              <p className="text-sm text-gold">{brl(item.preco * item.quantidade)}</p>
+          <div key={item.produtoId} className="flex items-center gap-2 rounded-lg bg-panel-2 px-2.5 py-1.5">
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium">{item.nome}</p>
+              <p className="text-xs text-gold">{brl(item.preco * item.quantidade)}</p>
             </div>
-            <div className="mt-2 flex items-center gap-2">
-              <button className="h-8 w-8 rounded-lg bg-bg" onClick={() => mudarQtd(item.produtoId, -1)}>
-                -
+            <div className="flex shrink-0 items-center gap-1">
+              <button
+                className="h-8 w-8 rounded-lg bg-bg"
+                onClick={() => mudarQtd(item.produtoId, -1)}
+                aria-label={`Diminuir ${item.nome}`}
+              >
+                −
               </button>
-              <span className="min-w-6 text-center">{item.quantidade}</span>
-              <button className="h-8 w-8 rounded-lg bg-bg" onClick={() => mudarQtd(item.produtoId, 1)}>
+              <span className="min-w-6 text-center text-sm">{item.quantidade}</span>
+              <button
+                className="h-8 w-8 rounded-lg bg-bg"
+                onClick={() => mudarQtd(item.produtoId, 1)}
+                aria-label={`Aumentar ${item.nome}`}
+              >
                 +
               </button>
             </div>
           </div>
         ))}
       </div>
-      <div className="shrink-0 space-y-3 border-t border-line p-4">
+      <div className="shrink-0 space-y-2 border-t border-line p-3">
         {pagamento === 'prazo' && (
           <div className="space-y-2">
             {clientes.length > 0 ? (
@@ -153,16 +161,18 @@ export function Checkout({
             )}
           </div>
         )}
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        <div className="grid grid-cols-5 gap-1.5">
           {pagamentos.map((opcao) => (
             <button
               key={opcao.id}
               onClick={() => setPagamento(opcao.id)}
-              className={`rounded-xl px-2 py-2.5 text-sm ${
+              title={opcao.label}
+              aria-label={opcao.label}
+              className={`rounded-lg px-1 py-2 text-xs ${
                 pagamento === opcao.id ? 'bg-gold text-bg font-semibold' : 'bg-panel-2 text-muted'
               }`}
             >
-              {opcao.label}
+              {opcao.curto}
             </button>
           ))}
         </div>
@@ -174,7 +184,7 @@ export function Checkout({
             value={valorCliente}
             onChange={(e) => setValorCliente(e.target.value)}
             placeholder="Valor recebido"
-            className="w-full rounded-xl border border-line bg-panel-2 px-3 py-2"
+            className="w-full rounded-lg border border-line bg-panel-2 px-3 py-1.5 text-sm"
           />
         )}
         {pagamento === 'dinheiro' && Number(valorCliente) > 0 && (
@@ -184,7 +194,7 @@ export function Checkout({
         <button
           disabled={salvando || itens.length === 0 || prazoSemCliente}
           onClick={() => void finalizar()}
-          className="w-full rounded-xl bg-gold py-3 font-semibold text-bg disabled:opacity-50"
+          className="w-full rounded-xl bg-gold py-2.5 font-semibold text-bg disabled:opacity-50"
         >
           {salvando ? 'Salvando...' : `Finalizar ${brl(total)}`}
         </button>
